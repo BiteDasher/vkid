@@ -1,0 +1,171 @@
+#!/bin/bash
+[ "$(tty | grep tty)" ] && setfont cyr-sun16
+echo "Добро пожаловать в интерактивный установщик арч линукса - vkid"
+set_username() {
+read -rp "Введите имя пользователя(маленькими латинскими буквами): " name
+}
+set_username
+while [ ! "$name" ]; do echo "Вы не ввели имя пользователя."; set_username; done
+set_hostname() {
+read -rp "Введите имя хоста(маленькими латинскими буквами без спецсимволов): " _hostname
+}
+set_hostname
+while [ ! "$_hostname" ]; do echo "Вы не ввели имя хоста."; set_hostname; done
+network_connect() {
+printf "\nДавайте выберем как подключаться к сети:"
+printf "\n1.dhcpcd 2.wpa_supplicant"
+read -rp ": " _con_method
+case $_con_method in
+	1|d*)
+	echo "Выберите интерфейс:"
+	ls /sys/class/net | cat
+	read -rp "> " _eth_interface
+	if [ ! "$(ls /sys/class/net | cat | grep -x $_eth_interface)" ]; then
+	echo "Интерфейс $_eth_interface не найден"; exit 1; fi
+	dhcpcd $_eth_interface
+	;;
+	2|w*)
+	read -rp "Введите имя WiFi сети: " _wpa_name
+	[ -z "$_wpa_name" ] && { echo "переменная пуста" ; exit 1 ; }
+	_wpa_pks="$(systemd-ask-password "Введите пароль WiFi сети:")"
+	[ -z "$_wpa_psk" ] && PSK_NONE=1
+	echo "network={" > /etc/wifi.conf
+	echo "ssid=\"$_wpa_name\"" >> /etc/wifi.conf
+	if [ "$PSK_NONE" ]; then echo "key_mgmt=NONE" >> /etc/wifi.conf; else
+	echo "psk=\"$_wpa_psk\"" >> /etc/wifi.conf; fi
+	echo "}" >> /etc/wifi.conf
+	wpa_supplicant -c /etc/wifi.conf -B
+	echo "Выберите интерфейс:"
+	ls /sys/class/net | cat
+	read -rp "> " _eth_interface
+	if [ ! "$(ls /sys/class/net | cat | grep -x $_eth_interface)" ]; then
+	echo "Интерфейс $_eth_interface не найден"; exit 1; fi
+	dhcpcd $_eth_interface
+	;; 
+	*)
+	echo "Неизвестный метод подключения"; exit 1
+	;; esac
+}
+[ "$UID" -ne 0 ] && { echo "Скрипт запущен не от рута" ; exit 1 ; }
+read -rp "Вы подключены к сети? [Y/n] " _is_active
+case $_is_active in
+""|Y*|y*)
+true ;;
+*)
+network_connect
+;; esac
+while [ ! "$(ping -c 1 google.com)" ]; do echo "Сеть все ещё не подключена к интернету. "; network_connect; done
+set_timezone() { 
+read -rp "Введите ваш часовой пояс(если в Москве - Europe/Moscow): " _timezone
+}
+set_timezone
+while [ ! "$(ls /usr/share/zoneinfo/$_timezone)" ]; do echo "Часовой пояс не найден."; set_timezone; done
+set_disk() {
+read -rp "Диск, на который будет установлена система(чаще всего что-то вроде /dev/sda): " _disk
+}
+set_disk
+while [[ ! $_disk || ! "$(ls $_disk)" ]]; do echo "Устройство не найдено."; set_disk; done
+if [[ $(echo $_disk | grep -E -- 'nv|mmc') ]]; then diskq="${_disk}p"; else diskq="${_disk}"; fi
+size="$(fdisk -l $_disk | head -n1 | cut -d" " -f3 | cut -d"," -f1 | cut -d"." -f1)"
+echo "Размер накопителя: ${size}Гб"
+premem="$(( $(free --kilo | awk 'NR==2{print $2}') / 1024 ))"
+echo "Кол-во ОЗУ: ${premem}Мб"
+read -rp "Делать раздел под подкачку? [Y/n] " _swap_q
+case $_swap_q in
+""|Y*|y*)
+read -rp "Сколько гигов из $(( $premem / 1000)) выделять? " _swap_size
+;; *) _swap_size=0 ;; esac
+rootpart="$(( $size - $_swap_size - 1  ))"
+if [[ "$_swap_size" != 0 ]]; then
+swap_size=$(( $_swap_size + 1 ))
+parted -a optimal --script $_disk mklabel gpt mkpart primary fat32 1MiB 1000MiB set 1 esp on mkpart swap-linux 1000MiB ${swap_size}GiB set 2 swap on mkpart primary ext4 ${swap_size}GiB 100%
+echo -e "t\n3\n24\nw" | fdisk $_disk
+mkswap ${diskq}2
+swapon ${diskq}2
+mkfs.ext4 ${diskq}3
+mount ${diskq}3 /mnt
+else
+parted -a optimal --script $_disk mklabel gpt mkpart primary fat32 1MiB 1000MiB set 1 esp on mkpart primary ext4 1000MiB 100%  
+echo -e "t\n2\n24\nw" | fdisk $_disk
+mkfs.ext4 ${diskq}2 
+mount ${diskq}2 /mnt
+fi
+mkfs.fat -F32 ${diskq}1
+mkdir -p /mnt/boot
+mount ${diskq}1 /mnt/boot
+select_mirror() {
+cat <<EOF
+1 - mirror.yandex.ru
+2 - mirror.truenetwork.ru
+3 - archlinux.zepto.cloud
+4 - mirror.rol.ru
+EOF
+read -rp "Зеркало, которое будет использоваться для скачивания пакетов(если хотите своё, напишите его, не указывая в конце '/archlinux/\$repo/os/\$arch'): " _mirror
+}
+select_mirror
+while [[ ! $_mirror ]]; do echo "Зеракло не указано."; select_mirror; done
+case $_mirror in
+1|*yandex*)
+__mirror__='Server = http://mirror.yandex.ru/archlinux/$repo/os/$arch' ;;
+2|*truenetwork*)
+__mirror__='Server = http://mirror.truenetwork.ru/archlinux/$repo/os/$arch' ;;
+3|*zepto*)
+__mirror__='Server = http://archlinux.zepto.cloud/$repo/os/$arch' ;;
+4|*rol*)
+__mirror__='Server = http://mirror.rol.ru/archlinux/$repo/os/$arch' ;;
+*://*.*)
+__mirror__='Server = '$__mirror'/archlinux/$repo/os/$arch' ;;
+*) echo "Неизвестное зеркало. Фолбэк на зеркало Яндекса."; __mirror__='Server = http://mirror.yandex.ru/archlinux/$repo/os/$arch' ;; esac
+echo "$__mirror__" > /etc/pacman.d/mirrorlist
+echo "Через 10 секунд будет установлена система. Нажмите Ctrl+C, если хотите отменить."; sleep 10
+pacstrap /mnt base linux linux-firmware nano vim networkmanager dhcpcd sudo base-devel git
+echo "Генерация fstab"; sleep 1
+genfstab -U /mnt >> /mnt/etc/fstab
+echo "Создание скрипта который будет выполнен из чрута..."; sleep 2
+cat <<__EOF > /mnt/usr/local/bin/install_arch
+#!/bin/bash
+name=$name
+tz="$_timezone"
+host=$_hostname
+echo "Делаю симлинк на часовой пояс"; sleep 1
+ln -sf /usr/share/zoneinfo/\$tz /etc/localtime
+echo "Настраиваю время"
+hwclock --systohc
+echo "Настраиваю локалии"
+sed 's/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/g' -i /etc/locale.gen
+sed 's/^#ru_RU.UTF-8 UTF-8/ru_RU.UTF-8 UTF-8/g' -i /etc/locale.gen
+locale-gen
+echo "LANG=ru_RU.UTF-8" > /etc/locale.conf
+echo "Настраиваю tty"
+echo "KEYMAP=ru" >> /etc/vconsole.conf
+echo "FONT=cyr-sun16" >> /etc/vconsole.conf
+echo "Ставлю имя хоста"
+echo \$host >> /etc/hostname
+echo "Настраиваю сеть"
+echo "127.0.0.1 localhost" >> /etc/hosts
+echo "::1 localhost" >> /etc/hosts
+echo "Пожалуйста, введите пароль от рута и нажмите Enter"
+passwd root
+echo "Создаю юзера \$name"
+useradd -m -g users -G wheel -s /bin/$_sh \$name
+echo "Пожалуйста, введите пароль от пользователя \$name и нажмите Enter"
+passwd \$name
+echo "Настраиваю sudo"; sleep 1
+sed 's/^# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/g' -i /etc/sudoers
+echo "Ставлю systemd-boot"; sleep 1
+bootctl install
+cat <<EOF > /boot/loader/entries/arch.conf
+title          Arch Linux
+linux          /vmlinuz-linux
+initrd         /initramfs-linux.img
+EOF
+echo "Обновляю initramfs"; sleep 1
+sed 's/udev/systemd/g' -i /etc/mkinitcpio.conf
+mkinitcpio -P
+echo "Готово"
+__EOF
+echo "Вхожу в chroot"; sleep 1
+chmod +x /mnt/usr/local/bin/install_arch
+arch-chroot /mnt /usr/local/bin/install_arch
+echo -e "Похоже, система установленна. Введите reboot что-бы перезагрузить компьютер, для подключения к интернету через wi-fi используйте \e[1;34msystemctl start NetworkManager; nmtui\e[0m, а если у вас подключение по кабелю, введите после перезагрузки \e[1;34msystemctl start dhcpcd\e[0m"
+rm /mnt/usr/local/bin/install_arch
