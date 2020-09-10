@@ -1,5 +1,5 @@
 # vkid
-Interactive Arch Linux installer (on Russian)
+Interactive Arch Linux installer (on Russian) \
 Интерактивный установщик Арч Линукса (на Русском)
 
 # Говорю спасибо:
