@@ -167,5 +167,5 @@ __EOF
 echo "Вхожу в chroot"; sleep 1
 chmod +x /mnt/usr/local/bin/install_arch
 arch-chroot /mnt /usr/local/bin/install_arch
-echo -e "Похоже, система установленна. Введите reboot что-бы перезагрузить компьютер, для подключения к интернету через wi-fi используйте \e[1;34msystemctl start NetworkManager; nmtui\e[0m, а если у вас подключение по кабелю, введите после перезагрузки \e[1;34msystemctl start dhcpcd\e[0m"
+echo -e "Похоже, система установленна. Введите reboot что-бы перезагрузить компьютер, для подключения к интернету через wi-fi используйте \e[1;34msystemctl start NetworkManager; nmtui\e[0m, а если у вас подключение по кабелю, введите после перезагрузки \e[1;34mdhcpcd имя_сетевого_интерфейса\e[0m"
 rm /mnt/usr/local/bin/install_arch
