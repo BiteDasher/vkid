@@ -56,7 +56,7 @@ network_connect
 ;; esac
 while [ ! "$(ping -c 1 google.com)" ]; do echo "Сеть все ещё не подключена к интернету. "; network_connect; done
 set_timezone() {
-less -r -f <(echo -e "\e[1;32mПосле того, как найдёте ваш часовой пояс, нажмите q\e[0m\n\n\e[1;34mИспользуйте стрелочки вверх и вниз, что-бы перемещаться по списку\e[0m\n"; find /usr/share/zoneinfo | cut -d "/" -f5-)
+less -r -f <(echo -e "\e[1;32mПосле того, как найдёте ваш часовой пояс, нажмите q\e[0m\n\n\e[1;34mИспользуйте стрелочки вверх и вниз, чтобы перемещаться по списку\e[0m\n"; find /usr/share/zoneinfo | cut -d "/" -f5-)
 read -rp "Введите ваш часовой пояс(если в Москве/Санкт-Петербурге - Europe/Moscow): " _timezone
 }
 set_timezone
@@ -168,5 +168,5 @@ __EOF
 echo "Вхожу в chroot"; sleep 1
 chmod +x /mnt/usr/local/bin/install_arch
 arch-chroot /mnt /usr/local/bin/install_arch
-echo -e "Похоже, система установленна. Введите reboot что-бы перезагрузить компьютер, для подключения к интернету через wi-fi используйте \e[1;34msystemctl start NetworkManager; nmtui\e[0m, а если у вас подключение по кабелю, введите после перезагрузки \e[1;34mdhcpcd имя_сетевого_интерфейса\e[0m"
+echo -e "Похоже, система установленна. Введите reboot чтобы перезагрузить компьютер, для подключения к интернету через wi-fi используйте \e[1;34msystemctl start NetworkManager; nmtui\e[0m, а если у вас подключение по кабелю, введите после перезагрузки \e[1;34mdhcpcd имя_сетевого_интерфейса\e[0m"
 rm /mnt/usr/local/bin/install_arch
