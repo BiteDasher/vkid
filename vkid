@@ -55,11 +55,12 @@ true ;;
 network_connect
 ;; esac
 while [ ! "$(ping -c 1 google.com)" ]; do echo "Сеть все ещё не подключена к интернету. "; network_connect; done
-set_timezone() { 
-read -rp "Введите ваш часовой пояс(если в Москве - Europe/Moscow): " _timezone
+set_timezone() {
+less -r -f <(echo -e "\e[1;32mПосле того, как найдёте ваш часовой пояс, нажмите q\e[0m\n\n\e[1;34mИспользуйте стрелочки вверх и вниз, что-бы перемещаться по списку\e[0m\n"; find /usr/share/zoneinfo | cut -d "/" -f5-)
+read -rp "Введите ваш часовой пояс(если в Москве/Санкт-Петербурге - Europe/Moscow): " _timezone
 }
 set_timezone
-while [ ! "$(ls /usr/share/zoneinfo/$_timezone)" ]; do echo "Часовой пояс не найден."; set_timezone; done
+while [ ! -f /usr/share/zoneinfo/$_timezone ]; do echo "Часовой пояс не найден."; sleep 2; set_timezone; done
 set_disk() {
 read -rp "Диск, на который будет установлена система(чаще всего что-то вроде /dev/sda): " _disk
 }
