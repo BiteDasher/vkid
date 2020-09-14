@@ -60,14 +60,14 @@ less -r -f <(echo -e "\e[1;32mПосле того, как найдёте ваш 
 read -rp "Введите ваш часовой пояс(если в Москве/Санкт-Петербурге - Europe/Moscow): " _timezone
 }
 set_timezone
-while [ ! -f /usr/share/zoneinfo/$_timezone ]; do echo "Часовой пояс не найден."; sleep 2; set_timezone; done
+while [ ! -e /usr/share/zoneinfo/$_timezone ]; do echo "Часовой пояс не найден."; sleep 2; set_timezone; done
 set_disk() {
 echo ''
 lsblk -d -n -o NAME,SIZE | sed 's/^/\/dev\//'
 read -rp "Диск, на который будет установлена система(чаще всего что-то вроде /dev/sda): " _disk
 }
 set_disk
-while [[ ! $_disk || ! -f $_disk ]]; do echo "Устройство не найдено."; set_disk; done
+while [[ ! $_disk || ! -e $_disk ]]; do echo "Устройство не найдено."; set_disk; done
 if [[ $(echo $_disk | grep -E -- 'nv|mmc') ]]; then diskq="${_disk}p"; else diskq="${_disk}"; fi
 size="$(fdisk -l $_disk | head -n1 | cut -d" " -f3 | cut -d"," -f1 | cut -d"." -f1)"
 echo "Размер накопителя: ${size}Гб"
