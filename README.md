@@ -4,3 +4,6 @@ Interactive Arch Linux installer (on Russian) \
 
 # Говорю спасибо:
 Артёму Мякину (https://github.com/agalq12): за помощь в написании кода для parted и фиксингу моих тупорылых ошибок
+
+## Команда для скачивания и запуска установщика через пайп:
+```curl -S -L git.io/JU4WW | bash```
