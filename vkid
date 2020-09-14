@@ -150,7 +150,7 @@ echo "::1 localhost" >> /etc/hosts
 echo "Пожалуйста, введите пароль от рута и нажмите Enter"
 passwd root
 echo "Создаю юзера \$name"
-useradd -m -g users -G wheel -s /bin/$_sh \$name
+useradd -m -g users -G wheel -s /bin/bash \$name
 echo "Пожалуйста, введите пароль от пользователя \$name и нажмите Enter"
 passwd \$name
 echo "Настраиваю sudo"; sleep 1
