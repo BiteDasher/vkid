@@ -18,8 +18,8 @@ read -rp ": " _con_method
 case $_con_method in
 	1|d*)
 	echo "Выберите интерфейс:"
-	ls /sys/class/net | cat
-	read -rp "> " _eth_interface
+	ls /sys/class/net | cat | sed ''/eth/s//$(echo -e "\033[0;32meth\033[0m")/''
+	read -rp "> " _eth_interface 
 	if [ ! "$(ls /sys/class/net | cat | grep -x $_eth_interface)" ]; then
 	echo "Интерфейс $_eth_interface не найден"; exit 1; fi
 	dhcpcd $_eth_interface
