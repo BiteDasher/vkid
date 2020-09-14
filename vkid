@@ -67,7 +67,7 @@ lsblk -d -n -o NAME,SIZE | sed 's/^/\/dev\//'
 read -rp "Диск, на который будет установлена система(чаще всего что-то вроде /dev/sda): " _disk
 }
 set_disk
-while [[ ! $_disk || ! -e $_disk ]]; do echo "Устройство не найдено."; set_disk; done
+while [[ ! $_disk || ! -b $_disk ]]; do echo "Устройство не найдено."; set_disk; done
 if [[ $(echo $_disk | grep -E -- 'nv|mmc') ]]; then diskq="${_disk}p"; else diskq="${_disk}"; fi
 size="$(fdisk -l $_disk | head -n1 | cut -d" " -f3 | cut -d"," -f1 | cut -d"." -f1)"
 echo "Размер накопителя: ${size}Гб"
