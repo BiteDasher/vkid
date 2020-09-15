@@ -27,7 +27,7 @@ case $_con_method in
 	2|w*)
 	read -rp "Введите имя WiFi сети: " _wpa_name
 	[ -z "$_wpa_name" ] && { echo "переменная пуста" ; exit 1 ; }
-	_wpa_pks="$(systemd-ask-password "Введите пароль WiFi сети:")"
+	_wpa_psk="$(systemd-ask-password "Введите пароль WiFi сети:")"
 	[ -z "$_wpa_psk" ] && PSK_NONE=1
 	echo "network={" > /etc/wifi.conf
 	echo "ssid=\"$_wpa_name\"" >> /etc/wifi.conf
