@@ -82,16 +82,20 @@ rootpart="$(( $size - $_swap_size - 1  ))"
 if [[ "$_swap_size" != 0 ]]; then
 swap_size=$(( $_swap_size + 1 ))
 parted -a optimal --script $_disk mklabel gpt mkpart primary fat32 1MiB 1000MiB set 1 esp on mkpart swap-linux 1000MiB ${swap_size}GiB set 2 swap on mkpart primary ext4 ${swap_size}GiB 100%
-echo -e "t\n3\n24\nw" | fdisk $_disk
+#echo -e "t\n3\n24\nw" | fdisk $_disk
+echo -e "t\n3\n20\nw" | fdisk $_disk
 mkswap ${diskq}2
 swapon ${diskq}2
 mkfs.ext4 ${diskq}3
 mount ${diskq}3 /mnt
+partroot="$(blkid ${diskq}3 | grep -o 'PARTUUID=".*"' | cut -d '"' -f 2)"
 else
 parted -a optimal --script $_disk mklabel gpt mkpart primary fat32 1MiB 1000MiB set 1 esp on mkpart primary ext4 1000MiB 100%  
-echo -e "t\n2\n24\nw" | fdisk $_disk
+#echo -e "t\n2\n24\nw" | fdisk $_disk
+echo -e "t\n2\n20\nw" | fdisk $_disk
 mkfs.ext4 ${diskq}2 
 mount ${diskq}2 /mnt
+partroot="$(blkid ${diskq}2 | grep -o 'PARTUUID=".*"' | cut -d '"' -f 2)"
 fi
 mkfs.fat -F32 ${diskq}1
 mkdir -p /mnt/boot
@@ -161,6 +165,7 @@ cat <<EOF > /boot/loader/entries/arch.conf
 title          Arch Linux
 linux          /vmlinuz-linux
 initrd         /initramfs-linux.img
+options        root=PARTUUID=$partroot
 EOF
 echo "Обновляю initramfs"; sleep 1
 sed 's/udev/systemd/g' -i /etc/mkinitcpio.conf
