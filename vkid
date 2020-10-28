@@ -121,7 +121,7 @@ __mirror__='Server = http://archlinux.zepto.cloud/$repo/os/$arch' ;;
 4|*rol*)
 __mirror__='Server = http://mirror.rol.ru/archlinux/$repo/os/$arch' ;;
 *://*.*)
-__mirror__='Server = '$__mirror'/archlinux/$repo/os/$arch' ;;
+__mirror__='Server = '$_mirror'/archlinux/$repo/os/$arch' ;;
 *) echo "Неизвестное зеркало. Фолбэк на зеркало Яндекса."; __mirror__='Server = http://mirror.yandex.ru/archlinux/$repo/os/$arch' ;; esac
 echo "$__mirror__" > /etc/pacman.d/mirrorlist
 echo "Через 10 секунд будет установлена система. Нажмите Ctrl+C, если хотите отменить."; sleep 10
