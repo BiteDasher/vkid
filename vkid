@@ -34,12 +34,13 @@ case $_con_method in
 	if [ "$PSK_NONE" ]; then echo "key_mgmt=NONE" >> /etc/wifi.conf; else
 	echo "psk=\"$_wpa_psk\"" >> /etc/wifi.conf; fi
 	echo "}" >> /etc/wifi.conf
-	wpa_supplicant -c /etc/wifi.conf -B
 	echo "Выберите интерфейс:"
 	ls /sys/class/net | cat | sed ''/wlp/s//$(echo -e "\033[0;32mwlp\033[0m")/'' | sed ''/wlan/s//$(echo -e "\033[0;32mwlan\033[0m")/''
 	read -rp "> " _eth_interface
 	if [ ! "$(ls /sys/class/net | cat | grep -x $_eth_interface)" ]; then
 	echo "Интерфейс $_eth_interface не найден"; exit 1; fi
+	wpa_supplicant -c /etc/wifi.conf -i $_eth_interface -B
+	sleep 3
 	dhcpcd $_eth_interface
 	;; 
 	*)
@@ -150,7 +151,7 @@ echo "::1 localhost" >> /etc/hosts
 echo "Пожалуйста, введите пароль от рута и нажмите Enter"
 passwd root
 echo "Создаю юзера \$name"
-useradd -m -g users -G wheel -s /bin/bash \$name
+useradd -m -U -G wheel -s /bin/bash \$name
 echo "Пожалуйста, введите пароль от пользователя \$name и нажмите Enter"
 passwd \$name
 echo "Настраиваю sudo"; sleep 1
