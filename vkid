@@ -165,7 +165,7 @@ cat <<EOF > /boot/loader/entries/arch.conf
 title          Arch Linux
 linux          /vmlinuz-linux
 initrd         /initramfs-linux.img
-options        root=PARTUUID=$partroot
+options        root=PARTUUID=$partroot rw
 EOF
 echo "Обновляю initramfs"; sleep 1
 sed 's/udev/systemd/g' -i /etc/mkinitcpio.conf
